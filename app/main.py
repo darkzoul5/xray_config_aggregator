@@ -103,7 +103,7 @@ async def fetch_subscription(
     try:
         full_url = f'{sub_link}{sub_id}'
         logger.info(f"Fetching subscription from: {full_url}")
-        sub = await client.get(full_url, timeout=3, verify=False)
+        sub = await client.get(full_url, timeout=3)
         sub.raise_for_status()
         logger.info(f"Successfully fetched from: {sub_link}")
         return base64.b64decode(sub.text)
@@ -122,7 +122,7 @@ async def merge_all(sub_links: list[str], vless_links: list[str], sub_id: str) -
         sub_id: Subscription ID to append to each HTTP link.
     Returns combined and encoded byte data of all valid configurations.
     '''
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         decoded_subs = [
             fetch_subscription(client, sub_url, sub_id) 
             for sub_url in sub_links
