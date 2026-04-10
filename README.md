@@ -7,7 +7,7 @@
 
 # vless_config_aggregator
 
-A reverse proxy that aggregates multiple VLESS configurations from various 3x-ui servers into a unified subscription link.
+An aggregator that combines multiple VLESS configurations from various 3x-ui servers into a unified subscription link.
 </div>
 
 ## Prepare
@@ -76,16 +76,12 @@ Edit the `.env` file with your own values:
 |CONFIG_URL|Link to the `.txt` configuration file hosted on GitHub|<https://api.github.com/.../file.txt>|
 |GITHUB_TOKEN|GitHub token (required if the file is in a private repo)|ghp_dhoauigc7898374yduisdhSDHFHGf7|
 |SUB_NAME|Display name for the subscription in clients. If empty, the subscription ID will be used in most cases|HFK|
-|SERVER_NAME|Your server’s domain name|domain.or.subdomain|
-|PORT|Port the service should run on|443|
+|PORT|Port the service listens on|8000|
 |URL|Path segment used in the final subscription URL|sub|
-|CERT_PATH|Absolute path to your SSL certificate directory|/etc/letsencrypt/live/domain.or.subdomain|
 
 ---
 
 ## Docker Setup
-
-The application runs in a single Docker container combining the App and Nginx.
 
 ### Quick Start
 
@@ -101,14 +97,16 @@ The application runs in a single Docker container combining the App and Nginx.
    sudo docker compose up -d
    ```
 
-### Access the service
+### Accessing the service
 
 The final aggregated link depends on your config:
 
-- Direct links only: `https://{SERVER_NAME}:{PORT}/{URL}/{SUB_NAME}`
-- With subscriptions: `https://{SERVER_NAME}:{PORT}/{URL}/subscription_id/{SUB_NAME}`
+- Direct links only: `https://{DOMAIN}/{URL}/{SUB_NAME}`
+- With subscriptions: `https://{DOMAIN}/{URL}/subscription_id/{SUB_NAME}`
 
 (Omit `/{SUB_NAME}` if the variable is empty)
+
+For SSL/HTTPS, use Traefik or similar reverse proxy.
 
 ---
 

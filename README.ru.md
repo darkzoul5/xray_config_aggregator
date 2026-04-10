@@ -7,9 +7,7 @@
 
 # vless_config_aggregator
 
-Ревёрс-прокси, предоставляющий доступ к множеству различных VLESS-конфигураций с разных серверов через единую ссылку.
-
-Подробное описание проекта доступно [на сайте автора](https://noisycake.ru/projects/subs_aggregator)
+Агрегатор, который объединяет множество различных VLESS-конфигураций с разных серверов в единую подписку.
 </div>
 
 ## Подготовка
@@ -76,16 +74,12 @@ cp .env.example .env
 |CONFIG_URL|Ссылка на `.txt` файл конфигураций|<https://api.github.com/.../file.txt>|
 |GITHUB_TOKEN|Токен доступа GitHub (если файл находится в приватном репозитории)|ghp_dhoauigc7898374yduisdhSDHFHGf7|
 |SUB_NAME|Имя подписки, которое будет отображаться в клиенте. Если не указано, им станет subscription ID из 3x-ui|HFK|
-|SERVER_NAME|Доменное имя сервера, на котором установлен сервис|domain.or.subdomain|
-|PORT|Порт, на котором будет работать сервис|443|
+|PORT|Порт, на котором работает сервис|8000|
 |URL|Часть пути новой подписки|sub|
-|CERT_PATH|Абсолютный путь к SSL-сертификату|/etc/letsencrypt/live/domain.or.subdomain|
 
 ---
 
 ## Docker
-
-Приложение запускается в одном Docker контейнере, объединяющем App и Nginx.
 
 ### Быстрый старт
 
@@ -105,8 +99,8 @@ cp .env.example .env
 
 Итоговая ссылка на подписку зависит от вашей конфигурации:
 
-- Только прямые ссылки: `https://{SERVER_NAME}:{PORT}/{URL}/{SUB_NAME}`
-- С подписками: `https://{SERVER_NAME}:{PORT}/{URL}/subscription_id/{SUB_NAME}`
+- Только прямые ссылки: `https://{DOMAIN}/{URL}/{SUB_NAME}`
+- С подписками: `https://{DOMAIN}/{URL}/subscription_id/{SUB_NAME}`
 
 В обоих случаях часть /{SUB_NAME} не нужна, если переменная пуста.
 

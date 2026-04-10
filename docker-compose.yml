@@ -1,26 +1,17 @@
 services:
   xray_config_aggregator:
     ports:
-      - "80:80" #ngnix
+      - "8000:8000"
     environment:
       - LOCAL_MODE=on/off
       - FILE_PATH=config.txt
       - CONFIG_URL=https://api.github.com/.../file.txt
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - SERVER_NAME=example.com
       - URL=/sub
       - SUB_NAME="unified links"
     volumes:
       - ${FILE_PATH}:/app/config.txt
-      - ${CERT_PATH}/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
-      - ${CERT_PATH}/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/', timeout=5)"]
-      interval: 30s
-      timeout: 10s
-      start_period: 5s
-      retries: 3
 
 networks:
   default:
