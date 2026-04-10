@@ -10,7 +10,7 @@ services:
       - SERVER_NAME=example.com
       - URL=/sub
       - PORT=8080
-      - SUB_NAME=${SUB_NAME}
+      - SUB_NAME="unified links"
     volumes:
       - ${FILE_PATH}:/app/config.txt
       - ${CERT_PATH}/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
