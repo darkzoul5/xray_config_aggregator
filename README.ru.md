@@ -17,21 +17,6 @@
 > [!NOTE]
 > Инструкция актуальна для Debian-based дистрибутивов Linux. Тестирование проводились в основном с клиентом sing-box Hiddify
 
-### Сертификат
-
-Сервис подразумевает обязательное наличие SSL сертификата, поэтому сначала необходимо его получить. Для этого потребуется привязать домен к IP целевого сервера.
-
-После получения домена выполните следующие команды (80 или 443 порты должны быть открыты):
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install certbot
-
-sudo certbot certonly --standalone -d <domain> --register-unsafely-without-email
-```
-
-Ключи будут лежать в директории "/etc/letsencrypt/live/<domain>/"
-
 ### Подписки
 
 Если вы собираетесь использовать не только прямые ссылки на конфигурации (`vless://`), но и "подписочные" ссылки, то в каждой панели 3x-ui нужно настроить функцию подписки.  
@@ -75,8 +60,8 @@ sudo sh get-docker.sh
 Скачайте репозиторий и перейдите в него:
 
 ```bash
-git clone https://github.com/NoisyCake/vless_config_aggregator.git
-cd vless_config_aggregator
+git clone https://github.com/darkzoul5/xray_config_aggregator.git
+cd xray_config_aggregator
 cp .env.example .env
 ```
 
@@ -110,22 +95,10 @@ cp .env.example .env
    nano .env  # Отредактируйте файл
    ```
 
-2. **Получите SSL сертификаты** (если не используется LOCAL_MODE):
-
-   ```bash
-   sudo certbot certonly --standalone -d your-domain.com
-   ```
-
-3. **Запустите сервис:**
+2. **Запустите сервис:**
 
    ```bash
    sudo docker compose up -d
-   ```
-
-4. **Просмотрите логи:**
-
-   ```bash
-   docker compose logs -f
    ```
 
 ### Доступ к сервису

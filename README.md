@@ -15,21 +15,6 @@ A reverse proxy that aggregates multiple VLESS configurations from various 3x-ui
 > [!NOTE]
 > This guide is relevant for Debian-based Linux distributions. Most testing was done with the sing-box client Hiddify
 
-### Certificate
-
-This service requires a valid SSL certificate, so you'll need to get it first.
-
-Once your domain is set up, generate a certificate using the following (make sure ports 80 and/or 443 are open):
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install certbot
-
-sudo certbot certonly --standalone -d <domain> --register-unsafely-without-email
-```
-
-The certificates will be located in: "/etc/letsencrypt/live/<domain>/"
-
 ### Subscriptions
 
 If you want aggregate not only direct links (`vless://`) but also subscription URLs, you'll need to enable Subscription on each panel in settings.  
@@ -41,9 +26,9 @@ All clients you want to merge must share the same **subscription ID**.
 
 ### Configuration file
 
-To get the service up and running, you'll also need a plain `.txt` file with your list configurations available on GitHub or locally.
+To get the service up and running, you will need a `.txt` file with 3x-ui configurations available on GitHub or locally.
 
-As mentioned above, both subscription and direct VLESS links are supported:
+Both subscription and direct VLESS links are supported:
 
 1. Direct `vless://` links go into the file as-is.
 2. For subscription links, you must strip out the subscription ID part. For example, `https://<domain>:<port>/<url>/<subscription_id>` -> `https://<domain>:<port>/<url>/` (make sure the is a trailing slash).
@@ -75,8 +60,8 @@ sudo sh get-docker.sh
 Download repo:
 
 ```bash
-git clone https://github.com/NoisyCake/vless_config_aggregator.git
-cd vless_config_aggregator
+git clone https://github.com/darkzoul5/xray_config_aggregator.git
+cd xray_config_aggregator
 cp .env.example .env
 ```
 
@@ -100,7 +85,7 @@ Edit the `.env` file with your own values:
 
 ## Docker Setup
 
-The application runs in a single Docker container combining FastAPI and Nginx. For detailed Docker configuration, build instructions, and troubleshooting, see [DOCKER_SETUP.md](DOCKER_SETUP.md).
+The application runs in a single Docker container combining the App and Nginx.
 
 ### Quick Start
 
@@ -110,22 +95,10 @@ The application runs in a single Docker container combining FastAPI and Nginx. F
    nano .env  # Edit with your values
    ```
 
-2. **Get SSL certificates** (if not using LOCAL_MODE):
-
-   ```bash
-   sudo certbot certonly --standalone -d your-domain.com
-   ```
-
-3. **Run the service:**
+2. **Run the service:**
 
    ```bash
    sudo docker compose up -d
-   ```
-
-4. **View logs:**
-
-   ```bash
-   docker compose logs -f
    ```
 
 ### Access the service
