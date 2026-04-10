@@ -101,11 +101,15 @@ async def fetch_subscription(
     Returns decoded configuration as bytes, or None if failed.
     '''
     try:
-        sub = await client.get(f'{sub_link}{sub_id}', timeout=3)
+        full_url = f'{sub_link}{sub_id}'
+        logger.info(f"Fetching subscription from: {full_url}")
+        sub = await client.get(full_url, timeout=3, verify=False)
         sub.raise_for_status()
+        logger.info(f"Successfully fetched from: {sub_link}")
         return base64.b64decode(sub.text)
     except httpx.HTTPError as e:
-        logger.warning(f"Can't get subscription url from {sub_link}{sub_id}: {str(e)}")
+        logger.warning(f"Failed to fetch from {sub_link}{sub_id} - Error: {e.__class__.__name__}: {str(e)}")
+        return None
 
 
 async def merge_all(sub_links: list[str], vless_links: list[str], sub_id: str) -> bytes:
