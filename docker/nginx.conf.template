@@ -13,9 +13,6 @@ http {
         listen ${PORT} ssl;
         server_name ${SERVER_NAME};
 
-        ssl_certificate /etc/nginx/ssl/fullchain.pem;
-        ssl_certificate_key /etc/nginx/ssl/privkey.pem;
-
         location ~ ^/${URL}/?${SUB_NAME} {
             rewrite ^/(${URL})/?${SUB_NAME} /$1 break;
             proxy_pass http://app:8000;
