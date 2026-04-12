@@ -168,7 +168,6 @@ async def main(sub_id: str = "") -> Response:
     
     result = await merge_all(sub_links, vless_links, sub_id)
     # Rename profiles to match the configured profile name
-    result = rename_profiles(result, PROFILE_NAME)
     global_sub = base64.b64encode(result)
 
     # Add subscription metadata headers for clients like Hiddify
