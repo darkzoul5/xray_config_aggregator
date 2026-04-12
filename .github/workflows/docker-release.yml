@@ -61,6 +61,7 @@ jobs:
             ## Docker Images
             `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}`
             `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest`
+            `${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev` latest commit image for testing
             ## Installation
             1. Copy `.env.example` to `.env` and update configuration
             2. Run: `docker compose up -d`
