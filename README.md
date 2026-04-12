@@ -5,7 +5,7 @@
     <a href="https://github.com/darkzoul5/xray_config_aggregator/blob/main/README.ru.md"><u><b>РУС</b></u></a>
 </p>
 
-# vless_config_aggregator
+# 3x-ui_sub_aggregator
 
 An aggregator that combines multiple VLESS configurations from various 3x-ui servers into a unified subscription link.
 </div>
@@ -82,6 +82,11 @@ Edit the `.env` file with your own values:
 ---
 
 ## Docker Setup
+
+This repository provides a ready to use image:
+`ghcr.io/darkzoul5/3x-ui_sub_aggregator:latest`
+or image by version tag:
+`ghcr.io/darkzoul5/3x-ui_sub_aggregator:1.0.2`
 
 ### Quick Start
 
