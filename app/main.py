@@ -152,6 +152,12 @@ async def merge_all(sub_links: list[str], vless_links: list[str], sub_id: str) -
 path = os.getenv('URL')
 
 
+@app.get('/health')
+async def health() -> Response:
+    '''Health check endpoint'''
+    return Response(content='OK', media_type='text/plain', status_code=200)
+
+
 @app.get(f'/{path}/{{sub_id}}')
 @app.get(f'/{path}')
 async def main(sub_id: str = "") -> Response:

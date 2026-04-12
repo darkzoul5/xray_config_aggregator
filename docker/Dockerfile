@@ -14,9 +14,9 @@ COPY app/main.py /app/
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Health check - check FastAPI directly
+# Health check - check FastAPI health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8000/', timeout=5)" || exit 1
+    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=5)" || exit 1
 
 # Start the application via entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]
