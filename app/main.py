@@ -167,11 +167,15 @@ async def main(sub_id: str = "") -> Response:
         raise HTTPException(status_code=500, detail="There is nothing to return")
     
     result = await merge_all(sub_links, vless_links, sub_id)
-
+    # Rename profiles to match the configured profile name
+    result = rename_profiles(result, PROFILE_NAME)
     global_sub = base64.b64encode(result)
 
-    # Add subscription metadata header for clients like Hiddify
+    # Add subscription metadata headers for clients like Hiddify
+    profile_title_b64 = base64.b64encode(PROFILE_NAME.encode()).decode()
     headers = {
-        "Subscription-Userinfo": f"upload=0; download=0; total=0; expire=0; name={PROFILE_NAME}"
+        "Profile-Title": f"base64:{profile_title_b64}",
+        "Profile-Update-Interval": "1",
+        "Subscription-Userinfo": "upload=0; download=0; total=0; expire=0"
     }
     return Response(content=global_sub, media_type='text/plain', headers=headers)
