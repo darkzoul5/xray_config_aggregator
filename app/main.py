@@ -32,6 +32,36 @@ app = FastAPI()
 # Load environs
 load_dotenv()
 
+# Get profile name from environment, default to "Aggregated"
+PROFILE_NAME = os.getenv('PROFILE_NAME', 'Aggregated')
+
+
+def rename_profiles(data: bytes, new_name: str) -> bytes:
+    '''
+    Renames all VLESS profiles in the config to the specified name.
+    Replaces the profile name after the # in vless:// links.
+    '''
+    try:
+        text = data.decode('utf-8', errors='ignore')
+        lines = text.split('\n')
+        renamed_lines = []
+        
+        for line in lines:
+            if line.startswith('vless://'):
+                # Split on # to separate config from profile name
+                if '#' in line:
+                    config_part = line.rsplit('#', 1)[0]
+                    renamed_lines.append(f'{config_part}#{new_name}')
+                else:
+                    renamed_lines.append(f'{line}#{new_name}')
+            else:
+                renamed_lines.append(line)
+        
+        return '\n'.join(renamed_lines).encode('utf-8')
+    except Exception as e:
+        logger.warning(f"Failed to rename profiles: {e}")
+        return data
+
 
 async def fetch_links() -> tuple[list[str], list[str]]:
     '''
@@ -165,6 +195,8 @@ async def main(sub_id: str = "") -> Response:
         raise HTTPException(status_code=500, detail="There is nothing to return")
     
     result = await merge_all(sub_links, vless_links, sub_id)
+    # Rename profiles to match the configured profile name
+    result = rename_profiles(result, PROFILE_NAME)
     global_sub = base64.b64encode(result)
 
     return Response(content=global_sub, media_type='text/plain')

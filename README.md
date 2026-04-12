@@ -83,6 +83,11 @@ Edit the `.env` file with your own values:
 
 ## Docker Setup
 
+This repository provides a ready to use image:
+`ghcr.io/darkzoul5/3x-ui_sub_aggregator:latest`
+or image by version tag:
+`ghcr.io/darkzoul5/3x-ui_sub_aggregator:1.0.2`
+
 ### Quick Start
 
 1. **Configure environment:**
