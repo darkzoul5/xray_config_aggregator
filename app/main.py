@@ -29,7 +29,13 @@ logger_file.setFormatter(formatter)
 logger_console.setFormatter(formatter)
 logger = logging.getLogger()
 logger.handlers.clear()
-logger.setLevel(logging.INFO)
+def _resolve_log_level(level_name: str) -> int:
+    return getattr(logging, level_name, logging.INFO)
+
+
+logger.setLevel(_resolve_log_level(LOG_LEVEL))
+logger_file.setLevel(_resolve_log_level(LOG_LEVEL))
+logger_console.setLevel(_resolve_log_level(LOG_LEVEL))
 logger.addHandler(logger_file)
 logger.addHandler(logger_console)
 
@@ -53,6 +59,7 @@ load_dotenv()
 # Environment configuration
 SUB_NAME = os.getenv('SUB_NAME', 'Aggregated')
 CONFIG_DIR = os.getenv('CONFIG_DIR', '/app/configs')
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 path = os.getenv('URL', 'sub').strip('/')
 clash_path = os.getenv('CLASH_URL', '/clash').strip('/')
 

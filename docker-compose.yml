@@ -9,6 +9,7 @@ services:
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - URL=/sub
       - CLASH_URL=/clash
+      #- LOG_LEVEL=info
     volumes:
       - /path/to/configs:/app/configs
     restart: unless-stopped
