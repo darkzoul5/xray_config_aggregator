@@ -275,21 +275,23 @@ def _hydrate_proxy_groups(
     proxy_names: list[str],
 ) -> list[dict[str, Any]]:
     hydrated = []
-    proxy_set = set(proxy_names)
 
     for group in groups:
         updated_group = dict(group)
         current = updated_group.get('proxies', [])
 
         if not current:
-            updated_group['proxies'] = proxy_names
+            # Empty proxies means "use all aggregated proxies".
+            # Use a fresh list per group to avoid YAML anchors/aliases.
+            updated_group['proxies'] = list(proxy_names)
         elif isinstance(current, list):
-            valid = [name for name in current if isinstance(name, str) and name in proxy_set]
-            if len(valid) != len(current):
-                logger.warning(f"Group '{updated_group.get('name')}' has unknown proxies and they were pruned")
-            updated_group['proxies'] = valid if valid else proxy_names
+            # Keep explicit proxy references as provided, including group-to-group references.
+            updated_group['proxies'] = [name for name in current if isinstance(name, str)]
         else:
-            updated_group['proxies'] = proxy_names
+            logger.warning(
+                f"Group '{updated_group.get('name')}' has invalid 'proxies' type; using all aggregated proxies"
+            )
+            updated_group['proxies'] = list(proxy_names)
 
         hydrated.append(updated_group)
 
@@ -309,6 +311,12 @@ def _deduplicate_proxy_names(proxies: list[dict[str, Any]]) -> list[dict[str, An
             continue
 
         base_name = name.strip()
+        # 3x-ui proxy names are often in "inbound-user" format.
+        # Keep only the inbound part for cleaner output and stable group matching.
+        if '-' in base_name:
+            inbound_name, suffix = base_name.rsplit('-', 1)
+            if inbound_name and suffix:
+                base_name = inbound_name
         count = seen.get(base_name, 0) + 1
         seen[base_name] = count
 
