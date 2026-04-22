@@ -27,20 +27,21 @@
 
 ### Файл с конфигами
 
-Чтобы всё заработало, также необходимо создать и разместить на GitHub или локально текстовый файл со списком всех конфигураций.
+Необходимо создать текстовый файл со списком адресов серверов 3x-ui (доступны на GitHub или локально).
 
-Как уже упоминалось, поддерживаются два вида ссылок: подписки и прямые. Прямые вставляются как есть.  
-Для подписок нужно удалить subscription ID из URL. То есть от `https://<domain>:<port>/<url>/<subscription_id>` должно остаться только `https://<domain>:<port>/<url>/` (обратите внимание на наличие конечного слэша).
+Приложение добавляет пути и ID подписки при получении конфигов:
+- Для VLESS/base64 подписок: `{server_url}/{URL}/{subscription_id}`
+- Для Clash/Mihomo: `{server_url}/{CLASH_URL}/{subscription_id}`
 
 Пример:
 
 ```txt
-https://subscription_link_example:1/imy/
-https://subscription_link_example:2/sub/
-vless://...
-vless://...
-vless://...
+https://example.org
+https://ip_address:port
+https://example.org:port
 ```
+
+Примечание: Каждый сервер должен поддерживать оба endpoint с настроенными путями `URL` и `CLASH_URL`.
 
 ---
 

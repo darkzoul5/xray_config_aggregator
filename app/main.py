@@ -8,7 +8,6 @@ import logging.handlers
 from asyncio import gather
 from binascii import Error as BinasciiError
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
 from dotenv import load_dotenv
 from fastapi import FastAPI, Response, HTTPException
 
@@ -53,12 +52,10 @@ CONFIG_DIR = os.getenv('CONFIG_DIR', '/app/configs')
 path = os.getenv('URL', 'sub').strip('/')
 clash_path = os.getenv('CLASH_URL', '/clash').strip('/')
 
-async def fetch_links() -> tuple[list[str], list[str]]:
+async def fetch_links() -> list[str]:
     '''
-    Fetches the configuration source file from GitHub or local .txt file.\n
-    Returns a tuple of two lists:
-        - HTTP subscription links
-        - Direct vless configuration links
+    Fetches server URLs from config file.
+    Returns list of base server URLs (trailing slashes removed).
     '''
     try:
         if os.getenv('LOCAL_MODE') == 'on':
@@ -84,18 +81,13 @@ async def fetch_links() -> tuple[list[str], list[str]]:
                 response.raise_for_status()
                 lines = response.text.splitlines()
             
-        sub_links = [
-            line.strip()
+        server_urls = [
+            line.strip().rstrip('/')
             for line in lines
             if line.strip().startswith('http')
         ]
-        vless_links = [
-            line.strip()
-            for line in lines
-            if line.strip().startswith('vless://')
-        ]
             
-        return sub_links, vless_links
+        return server_urls
     except httpx.HTTPStatusError as e:
         logger.critical(f"GitHub fetch error: {str(e)}")
         raise HTTPException(
@@ -109,66 +101,67 @@ async def fetch_links() -> tuple[list[str], list[str]]:
 
 async def fetch_subscription(
     client: httpx.AsyncClient,
-    sub_link: str,
-    sub_id: str
+    vless_url: str
 ) -> bytes | None:
     '''
-    Downloads and decodes a base64 subscription config
-    using the provided sub_id.\n
+    Downloads and decodes a base64 subscription config.
+
     Args:
         client: Shared HTTP client session.
-        sub_link: Base URL to the subscription service.
-        sub_id: Unique identifier for the subscription.
+        vless_url: Full subscription URL.
     Returns decoded configuration as bytes, or None if failed.
     '''
     try:
-        full_url = f'{sub_link}{sub_id}'
-        logger.info(f"Fetching subscription from: {full_url}")
-        sub = await client.get(full_url, timeout=3)
+        logger.info(f"Fetching subscription from: {vless_url}")
+        sub = await client.get(vless_url, timeout=3)
         sub.raise_for_status()
-        logger.info(f"Successfully fetched from: {sub_link}")
+        logger.info(f"Successfully fetched from: {vless_url}")
         return base64.b64decode(sub.text)
     except (BinasciiError, ValueError) as e:
-        logger.warning(f"Failed to decode subscription from {sub_link}{sub_id} - {str(e)}")
+        logger.warning(f"Failed to decode subscription from {vless_url} - {str(e)}")
         return None
     except httpx.HTTPError as e:
-        logger.warning(f"Failed to fetch from {sub_link}{sub_id} - Error: {e.__class__.__name__}: {str(e)}")
+        logger.warning(f"Failed to fetch from {vless_url} - Error: {e.__class__.__name__}: {str(e)}")
         return None
 
 
-async def merge_all(sub_links: list[str], vless_links: list[str], sub_id: str) -> bytes:
+def _build_vless_url(server_url: str, sub_id: str) -> str:
+    '''Build full VLESS subscription URL from server base URL and sub_id.'''
+    return f"{server_url}/{path}/{sub_id}"
+
+
+def _build_clash_url(server_url: str, sub_id: str) -> str:
+    '''Build full Clash subscription URL from server base URL and sub_id.'''
+    return f"{server_url}/{clash_path}/{sub_id}"
+
+
+async def merge_all(server_urls: list[str], sub_id: str) -> bytes:
     '''
-    Merges both 3x-ui subscriptions and direct VLESS links into
-    a single byte stream.\n
+    Merges VLESS/base64 subscriptions from multiple servers.
+
     Args:
-        sub_links: List of HTTP-based subscription links.
-        vless_links: List of direct VLESS configuration strings.
-        sub_id: Subscription ID to append to each HTTP link.
+        server_urls: List of base server URLs.
+        sub_id: Subscription ID to append to each URL.
     Returns combined and encoded byte data of all valid configurations.
     '''
     async with httpx.AsyncClient(verify=False) as client:
-        decoded_subs = [
-            fetch_subscription(client, sub_url, sub_id) 
-            for sub_url in sub_links
+        vless_urls = [_build_vless_url(url, sub_id) for url in server_urls]
+        fetch_tasks = [
+            fetch_subscription(client, vless_url)
+            for vless_url in vless_urls
         ]
-        tmp = await gather(*decoded_subs)
-        data = [x for x in tmp if x is not None]
+        results = await gather(*fetch_tasks)
+        data = [x for x in results if x is not None]
         
-        # If there is no configs at all
-        if not data and not vless_links:
-            logger.error("No subscriptions or configurations available")
+        if not data:
+            logger.error("No subscriptions available")
             raise HTTPException(
                 status_code=500,
                 detail="There is nothing to return"
             )
-        elif not data:
-            logger.warning("No subscriptions available")
 
-        encoded_vless_links = [link.encode() for link in vless_links]
-        merged_subs = b''.join(data)
-        merged_configs = b'\n'.join(encoded_vless_links)
-
-        return merged_subs + merged_configs
+        merged = b'\n'.join(data)
+        return merged
 
 
 def _sanitize_sub_id(sub_id: str) -> str:
@@ -196,31 +189,7 @@ def _resolve_config_file(default_name: str, pattern: str, sub_id: str) -> str:
     return default_path
 
 
-def _replace_path_segment(original_path: str, source_segment: str, target_segment: str) -> str:
-    src = source_segment.strip('/')
-    dst = target_segment.strip('/')
-    if not dst:
-        dst = 'clash'
 
-    parts = [part for part in original_path.split('/') if part]
-    for idx in range(len(parts) - 1, -1, -1):
-        if parts[idx] == src:
-            parts[idx] = dst
-            break
-    else:
-        parts = [dst]
-
-    return '/' + '/'.join(parts) + '/'
-
-
-def _build_clash_base_url(sub_link: str) -> str:
-    parsed = urlsplit(sub_link)
-    new_path = _replace_path_segment(parsed.path, path, clash_path)
-    return urlunsplit((parsed.scheme, parsed.netloc, new_path, '', ''))
-
-
-def _build_clash_sources(sub_links: list[str]) -> list[str]:
-    return [_build_clash_base_url(link) for link in sub_links]
 
 
 def _subscription_headers() -> dict[str, str]:
@@ -350,40 +319,37 @@ def _parse_yaml_payload(payload: str) -> dict[str, Any] | None:
 
 async def fetch_clash_subscription(
     client: httpx.AsyncClient,
-    sub_link: str,
-    sub_id: str,
+    clash_url: str,
 ) -> list[dict[str, Any]]:
-    full_url = f'{sub_link}{sub_id}'
     try:
-        logger.info(f"Fetching clash subscription from: {full_url}")
-        response = await client.get(full_url, timeout=4)
+        logger.info(f"Fetching clash subscription from: {clash_url}")
+        response = await client.get(clash_url, timeout=4)
         response.raise_for_status()
 
         parsed = _parse_yaml_payload(response.text)
         if parsed is None:
-            logger.warning(f"Invalid clash payload format from {full_url}")
+            logger.warning(f"Invalid clash payload format from {clash_url}")
             return []
 
         proxies = parsed.get('proxies', [])
         if not isinstance(proxies, list):
-            logger.warning(f"No proxy list in clash payload from {full_url}")
+            logger.warning(f"No proxy list in clash payload from {clash_url}")
             return []
 
         valid = [item for item in proxies if isinstance(item, dict) and item.get('name')]
-        logger.info(f"Fetched {len(valid)} clash proxies from: {full_url}")
+        logger.info(f"Fetched {len(valid)} clash proxies from: {clash_url}")
         return valid
     except httpx.HTTPError as e:
-        logger.warning(f"Failed to fetch clash from {full_url} - Error: {e.__class__.__name__}: {str(e)}")
+        logger.warning(f"Failed to fetch clash from {clash_url} - Error: {e.__class__.__name__}: {str(e)}")
         return []
 
 
-async def merge_clash(sub_links: list[str], sub_id: str) -> dict[str, Any]:
-    clash_sources = _build_clash_sources(sub_links)
-
+async def merge_clash(server_urls: list[str], sub_id: str) -> dict[str, Any]:
     async with httpx.AsyncClient(verify=False) as client:
+        clash_urls = [_build_clash_url(url, sub_id) for url in server_urls]
         tasks = [
-            fetch_clash_subscription(client, sub_url, sub_id)
-            for sub_url in clash_sources
+            fetch_clash_subscription(client, clash_url)
+            for clash_url in clash_urls
         ]
         responses = await gather(*tasks)
 
@@ -419,12 +385,12 @@ async def clash(sub_id: str = "") -> Response:
     '''
     API endpoint to aggregate native 3x-ui clash (Mihomo) subscriptions.
     '''
-    sub_links, _ = await fetch_links()
-    if not sub_links:
-        logger.error("No subscription links available for clash endpoint")
-        raise HTTPException(status_code=500, detail="There are no subscription links to return")
+    server_urls = await fetch_links()
+    if not server_urls:
+        logger.error("No server URLs available for clash endpoint")
+        raise HTTPException(status_code=500, detail="There are no server URLs to return")
 
-    clash_doc = await merge_clash(sub_links, sub_id)
+    clash_doc = await merge_clash(server_urls, sub_id)
     clash_yaml = yaml.safe_dump(clash_doc, sort_keys=False, allow_unicode=True)
     return Response(content=clash_yaml, media_type='text/plain', headers=_subscription_headers())
 
@@ -433,18 +399,17 @@ async def clash(sub_id: str = "") -> Response:
 @app.get(f'/{path}')
 async def main(sub_id: str = "") -> Response:
     '''
-    API endpoint to encode combined configurations.\n
+    API endpoint to aggregate VLESS/base64 subscriptions.\n
     Args:
-        sub_id: Optional subscription ID (used for HTTP-based configs).
+        sub_id: Optional subscription ID to append to server URLs.
     Returns a base64-encoded text/plain response containing all valid configurations.
     '''
-    sub_links, vless_links = await fetch_links()
-    if not sub_links and not vless_links:
-        logger.error("No subscriptions or configurations available")
+    server_urls = await fetch_links()
+    if not server_urls:
+        logger.error("No server URLs available")
         raise HTTPException(status_code=500, detail="There is nothing to return")
     
-    result = await merge_all(sub_links, vless_links, sub_id)
-    # Rename profiles to match the configured profile name
+    result = await merge_all(server_urls, sub_id)
     global_sub = base64.b64encode(result)
 
     return Response(content=global_sub, media_type='text/plain', headers=_subscription_headers())

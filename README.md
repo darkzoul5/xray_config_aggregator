@@ -29,22 +29,21 @@ All clients you want to merge must share the same **subscription ID**.
 
 ### Configuration file
 
-To get the service up and running, you will need a `.txt` file with 3x-ui configurations available on GitHub or locally.
+You need a `.txt` file with a list of 3x-ui server URLs available on GitHub or locally.
 
-Both subscription and direct VLESS links are supported:
-
-1. Direct `vless://` links go into the file as-is.
-2. For subscription links, you must strip out the subscription ID part. For example, `https://<domain>:<port>/<url>/<subscription_id>` -> `https://<domain>:<port>/<url>/` (make sure the is a trailing slash).
+The app appends the path segments and subscription ID when fetching:
+- For VLESS/base64 subscriptions: `{server_url}/{URL}/{subscription_id}`
+- For Clash/Mihomo: `{server_url}/{CLASH_URL}/{subscription_id}`
 
 Example:
 
 ```txt
-https://subscription_link_example:1/imy/
-https://subscription_link_example:2/sub/
-vless://...
-vless://...
-vless://...
+https://example.org
+https://ip_address:port
+https://example.org:port
 ```
+
+Note: Each server must support both endpoints with the configured `URL` and `CLASH_URL` paths.
 
 ---
 
