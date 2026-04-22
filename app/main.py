@@ -13,6 +13,25 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Response, HTTPException
 
 
+# Load environs first so all env-based configuration is available
+load_dotenv()
+
+# Environment configuration
+SUB_NAME = os.getenv('SUB_NAME', 'Aggregated')
+CONFIG_DIR = os.getenv('CONFIG_DIR', '/app/configs')
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+path = os.getenv('URL', 'sub').strip('/')
+clash_path = os.getenv('CLASH_URL', '/clash').strip('/')
+
+
+def _resolve_log_level(level_name: str) -> int:
+    return getattr(logging, level_name, logging.INFO)
+
+
+# Initialize FastAPI app
+app = FastAPI()
+
+
 # Logging configuration with rotation every 3 days
 logger_file = logging.handlers.TimedRotatingFileHandler(
     filename="py.log",
@@ -29,10 +48,6 @@ logger_file.setFormatter(formatter)
 logger_console.setFormatter(formatter)
 logger = logging.getLogger()
 logger.handlers.clear()
-def _resolve_log_level(level_name: str) -> int:
-    return getattr(logging, level_name, logging.INFO)
-
-
 logger.setLevel(_resolve_log_level(LOG_LEVEL))
 logger_file.setLevel(_resolve_log_level(LOG_LEVEL))
 logger_console.setLevel(_resolve_log_level(LOG_LEVEL))
@@ -49,19 +64,6 @@ class HealthCheckFilter(logging.Filter):
 # Apply filter to Uvicorn access logs
 logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
 
-
-# Initialize FastAPI app
-app = FastAPI()
-
-# Load environs
-load_dotenv()
-
-# Environment configuration
-SUB_NAME = os.getenv('SUB_NAME', 'Aggregated')
-CONFIG_DIR = os.getenv('CONFIG_DIR', '/app/configs')
-LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
-path = os.getenv('URL', 'sub').strip('/')
-clash_path = os.getenv('CLASH_URL', '/clash').strip('/')
 
 async def fetch_links() -> list[str]:
     '''
