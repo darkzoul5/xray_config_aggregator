@@ -339,11 +339,16 @@ async def fetch_clash_subscription(
         response = await client.get(clash_url, timeout=4)
         response.raise_for_status()
         logger.info(f"Clash response status={response.status_code}, bytes={len(response.text)} from {clash_url}")
+        logger.info(f"Clash response preview from {clash_url}: {response.text[:300]!r}")
 
         parsed = _parse_yaml_payload(response.text)
         if parsed is None:
             logger.warning(f"Invalid clash payload format from {clash_url}")
             return []
+
+        logger.info(f"Clash parsed type from {clash_url}: {type(parsed).__name__}")
+        if isinstance(parsed, dict):
+            logger.info(f"Clash parsed keys from {clash_url}: {sorted(parsed.keys())}")
 
         proxies = parsed.get('proxies', [])
         if not isinstance(proxies, list):
@@ -352,6 +357,8 @@ async def fetch_clash_subscription(
 
         valid = [item for item in proxies if isinstance(item, dict) and item.get('name')]
         logger.info(f"Fetched {len(valid)} clash proxies from: {clash_url}")
+        if not valid:
+            logger.warning(f"Clash payload from {clash_url} had proxies key but no usable proxy entries")
         return valid
     except httpx.HTTPError as e:
         logger.warning(f"Failed to fetch clash from {clash_url} - Error: {e.__class__.__name__}: {str(e)}")
