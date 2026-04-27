@@ -8,6 +8,7 @@
 Aggregate multiple 3x-ui subscriptions into a single endpoint.
 
 Supported output formats:
+
 - VLESS/base64 subscription
 - Clash/Mihomo YAML subscription
 
@@ -21,6 +22,7 @@ Supported output formats:
 4. Returns one merged subscription.
 
 For Clash output, it also:
+
 - merges all proxies,
 - strips email-like suffix from proxy names,
 - deduplicates proxy names,
@@ -42,23 +44,23 @@ git clone https://github.com/darkzoul5/xray_config_aggregator.git
 cd xray_config_aggregator
 ```
 
-2. Prepare local config directory and source list:
+1. Prepare local config directory and source list:
 
 ```bash
 mkdir -p configs
 cp config.txt.example configs/config.txt
 ```
 
-3. Edit `configs/config.txt` and put one source URL per line:
+1. Edit `configs/config.txt` and put one source URL per line:
 
 ```txt
 https://panel-1.example.com
 https://panel-2.example.com:8443
 ```
 
-4. Configure environment in `docker-compose.yml` (or your own `.env` file).
+1. Configure environment in `docker-compose.yml` (or your own `.env` file).
 
-5. Start service:
+2. Start service:
 
 ```bash
 docker compose up -d
@@ -71,15 +73,16 @@ Service default port is `8000`.
 The app dynamically creates routes based on `URL` and `CLASH_URL`.
 
 - VLESS/base64:
-   - `GET /{URL}`
-   - `GET /{URL}/{sub_id}`
+  - `GET /{URL}`
+  - `GET /{URL}/{sub_id}`
 - Clash/Mihomo:
-   - `GET /{CLASH_URL}`
-   - `GET /{CLASH_URL}/{sub_id}`
+  - `GET /{CLASH_URL}`
+  - `GET /{CLASH_URL}/{sub_id}`
 - Health check:
-   - `GET /health`
+  - `GET /health`
 
 Examples (with `URL=sub` and `CLASH_URL=clash`):
+
 - `http://localhost:8000/sub/my_sub_id`
 - `http://localhost:8000/clash/my_sub_id`
 - `http://localhost:8000/health`
@@ -118,6 +121,7 @@ And your aggregated links will be:
 - `http://your-aggregator-host:8000/clash/user123`
 
 Notes:
+
 - Source 3x-ui and aggregator URLs should use the same path structure (`/{URL}/{sub_id}` and `/{CLASH_URL}/{sub_id}`); only the domain/host part is different.
 - `URL` and `CLASH_URL` are global for all sources.
 - If a source uses a different path pattern, normalize it with a reverse proxy, or add that source with a full prefix path in `config.txt` only if the resulting final URL still matches the formula.
@@ -141,6 +145,7 @@ Notes:
 ### Source list file
 
 `config.txt` format:
+
 - one URL per line,
 - only lines starting with `http` or `https`  are used,
 - trailing slash is removed automatically.
@@ -192,15 +197,15 @@ Set environment variables before running.
 ## Troubleshooting
 
 - `404 Config file not found`:
-   - check `CONFIG_URL`, token permissions, and whether the URL returns raw text.
+  - check `CONFIG_URL`, token permissions, and whether the URL returns raw text.
 - Empty or failed aggregation:
-   - verify each source URL actually exposes configured `URL` and/or `CLASH_URL` paths.
-   - verify `sub_id` exists on all source panels.
+  - verify each source URL actually exposes configured `URL` and/or `CLASH_URL` paths.
+  - verify `sub_id` exists on all source panels.
 - No Clash groups/rules in output:
-   - check template files in `CONFIG_DIR` and YAML syntax.
+  - check template files in `CONFIG_DIR` and YAML syntax.
 
 ## Attribution and license
 
-Based on: https://github.com/NoisyCake/vless_config_aggregator
+Based on: <https://github.com/NoisyCake/vless_config_aggregator>
 
 This repository is independently maintained and licensed under MIT.
